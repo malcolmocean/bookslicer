@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const copyButton = document.getElementById('copyButton')
   const downloadButton = document.getElementById('downloadButton')
   const output = document.getElementById('output')
+  console.log('output element:', output)
+  console.log('output element query:', document.getElementById('output'))
   const loading = document.getElementById('loading')
   
   let book = null
@@ -50,7 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   async function handleFiles(files) {
-    if (files.length > 0 && files[0].type.includes('epub')) {
+    if (!files.length) {return}
+    if (files[0].type.includes('epub')) {
       const file = files[0]
       loading.style.display = 'block'
       chaptersList.innerHTML = ''
@@ -67,11 +70,19 @@ document.addEventListener('DOMContentLoaded', () => {
           reader.readAsArrayBuffer(file)
         })
         
+        console.log('ArrayBuffer loaded, size:', arrayBuffer.byteLength)
+        
         book = ePub()
+        console.log('Book object created:', book)
+        
         await book.open(arrayBuffer)
+        console.log('Book opened, spine items:', book.spine?.spineItems?.length)
+        console.log('Book archive:', book.archive)
         
         // Flatten the navigation items into an array
         const navigation = await book.loaded.navigation
+        console.log('Navigation loaded:', navigation)
+        
         const tocArray = []
         const flattenToc = (items) => {
           items.forEach(item => {
@@ -90,21 +101,44 @@ document.addEventListener('DOMContentLoaded', () => {
         
         for (let i = 0; i < spineItems.length; i++) {
           const item = spineItems[i]
+          console.log('Processing spine item:', {
+            href: item.href,
+            id: item.id,
+            index: i
+          })
           
           try {
             // Get chapter content using the book's archive
-            const content = await book.archive.getText(item.href)
+            console.log('About to get text for href:', item.href)
+            const fullPath = `OEBPS/${item.href}`
+            console.log('Full path:', fullPath)
+            console.log('Available files:', Object.keys(book.archive.zip.files))
+            
+            const content = await new Promise((resolve, reject) => {
+              const zipFile = book.archive.zip.files[fullPath]
+              if (!zipFile) {
+                console.warn(`File not found in zip: ${fullPath}`)
+                return resolve('')
+              }
+              zipFile.async('string')
+                .then(resolve)
+                .catch(reject)
+            })
+            console.log('Raw content from archive:', content?.substring(0, 100))
             let text = ''
             
             // Create a temporary div to parse HTML content
             const temp = document.createElement('div')
             temp.innerHTML = content
+            console.log('Temp div content:', temp.innerHTML?.substring(0, 100))
             
             // Remove script tags for safety
             temp.querySelectorAll('script').forEach(script => script.remove())
             
             text = temp.textContent || ''
+            console.log('Text after textContent:', text?.substring(0, 100))
             text = text.trim()
+            console.log('Text after trim:', text?.substring(0, 100))
             
             // Try to get title from toc
             let title = `Chapter ${i + 1}`
@@ -116,12 +150,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const tokenEstimate = Math.ceil(text.length / 4)
             
             if (text) { // Only add chapters that have content
-              chapters.push({
+              const chapter = {
                 id: item.href,
                 title: title,
                 text: text,
                 tokenEstimate: tokenEstimate
+              }
+              console.log('Pushing chapter:', {
+                id: chapter.id,
+                title: chapter.title,
+                textLength: chapter.text?.length,
+                textPreview: chapter.text?.substring(0, 100)
               })
+              chapters.push(chapter)
             }
           } catch (err) {
             console.warn(`Error loading chapter ${i}:`, err)
@@ -211,9 +252,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Extract selected chapters
 extractButton.addEventListener('click', () => {
+  console.log('Extract button clicked')
+  console.log('output element in click handler:', output)
+  
   const selectedHrefs = Array.from(chaptersList.querySelectorAll('input[type="checkbox"]:checked'))
-  .map(checkbox => checkbox.dataset.href)
-  .filter(href => href) // Remove undefined/empty hrefs (section checkboxes)
+    .map(checkbox => checkbox.dataset.href)
+    .filter(href => href)
+  
+  console.log('Selected hrefs:', selectedHrefs)
   
   if (selectedHrefs.length === 0) {
     alert('Please select at least one chapter.')
@@ -221,14 +267,17 @@ extractButton.addEventListener('click', () => {
   }
   
   const extractedText = selectedHrefs
-  .map(href => {
-    const chapter = chapters.find(ch => ch.id === href)
-    return chapter ? chapter.text : ''
-  })
-  .filter(text => text) // Remove any empty texts
-  .join('\n\n')
-  .replace(/\s+/g, ' ') // Normalize whitespace
-  .trim()
+    .map(href => {
+      const chapter = chapters.find(ch => ch.id === href)
+      console.log('Found chapter:', chapter)
+      return chapter ? chapter.text : ''
+    })
+    .filter(text => text)
+    .join('\n\n')
+    .replace(/\s+/g, ' ')
+    .trim()
+  
+  console.log('Extracted text length:', extractedText.length)
   
   output.textContent = extractedText
   output.style.display = 'block'
