@@ -3,7 +3,7 @@
 - [x] line-breaks etc in output
 - [x] restructure page to be more convenient scrolling-wise
 - [x] add select-all button
-- [ ] include ToC showing what was/wasn't included
+- [x] include ToC showing what was/wasn't included
 - [ ] make downloaded file have a very good filename
 - [ ] replace alert() with smoother things
 - [ ] favicon

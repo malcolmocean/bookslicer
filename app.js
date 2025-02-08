@@ -298,6 +298,48 @@ extractButton.addEventListener('click', () => {
     alert('Please select at least one chapter.')
     return
   }
+
+  // Build table of contents with icons
+  function buildTocWithIcons(items, selectedHrefs, level = 0) {
+    return items.map(item => {
+      const hasSubitems = item.subitems && item.subitems.length > 0
+      const indent = '  '.repeat(level)
+      
+      let icon = '❌' // default not selected
+      
+      if (hasSubitems) {
+        const subItemHrefs = getAllHrefs(item.subitems)
+        const selectedSubItems = subItemHrefs.filter(href => selectedHrefs.includes(href))
+        
+        if (selectedSubItems.length === subItemHrefs.length) {
+          icon = '✅'
+        } else if (selectedSubItems.length > 0) {
+          icon = '🔷'
+        }
+      } else if (selectedHrefs.includes(item.href)) {
+        icon = '✅'
+      }
+      
+      let result = `${indent}- ${icon} ${item.label.trim()}\n`
+      
+      if (hasSubitems) {
+        result += buildTocWithIcons(item.subitems, selectedHrefs, level + 1)
+      }
+      
+      return result
+    }).join('')
+  }
+
+  function getAllHrefs(items) {
+    let hrefs = []
+    items.forEach(item => {
+      if (item.href) hrefs.push(item.href)
+      if (item.subitems) hrefs = hrefs.concat(getAllHrefs(item.subitems))
+    })
+    return hrefs
+  }
+
+  const tocWithIcons = buildTocWithIcons(book.navigation.toc, selectedHrefs)
   
   const extractedText = selectedHrefs
     .map(href => {
@@ -308,12 +350,16 @@ extractButton.addEventListener('click', () => {
     .filter(text => text)
     .join('\n\n')
     .replace(/\n\n+/g, '\n\n')
-    // .replace(/\s+/g, ' ')
     .trim()
   
   console.log('Extracted text length:', extractedText.length)
   
-  output.textContent = extractedText
+  // Combine TOC with extracted text
+  const finalText = `This text is excerpted from *${book.packaging.metadata.title}* by ${book.packaging.metadata.creator}
+  Here is the full Table of Contents, with checkmark icons indicating which sections
+  of the original are included:\n\n${tocWithIcons}\n\n---\n\n${extractedText}`
+  
+  output.textContent = finalText
   output.style.display = 'block'
   copyButton.disabled = false
   downloadButton.disabled = false
