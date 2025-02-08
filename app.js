@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const extractButton = document.getElementById('extractButton')
   const copyButton = document.getElementById('copyButton')
   const downloadButton = document.getElementById('downloadButton')
+  const selectAllButton = document.getElementById('selectAllButton')
   const output = document.getElementById('output')
   console.log('output element:', output)
   console.log('output element query:', document.getElementById('output'))
@@ -260,6 +261,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // Add event listeners for checkboxes to update sidebar
   chaptersList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
     checkbox.addEventListener('change', updateSidebar)
+  })
+
+  // Add select all functionality
+  selectAllButton.addEventListener('click', () => {
+    const checkboxes = chaptersList.querySelectorAll('input[type="checkbox"]')
+    const anyUnchecked = Array.from(checkboxes).some(checkbox => !checkbox.checked)
+    
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = anyUnchecked
+    })
+    
+    updateSidebar()
   })
 }
 
