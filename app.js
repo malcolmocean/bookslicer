@@ -178,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         displayChapters()
         extractButton.disabled = false
+        dropZone.style.display = 'none'
       } catch (error) {
         console.error('Error processing EPUB:', error)
         chaptersList.innerHTML = '<p style="color: red;">Error processing EPUB file. Please try another file.</p>'
@@ -255,7 +256,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     })
   })
+
+  // Add event listeners for checkboxes to update sidebar
+  chaptersList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+    checkbox.addEventListener('change', updateSidebar)
+  })
 }
+
+function updateSidebar() {
+  // TODO
+}
+
+// Initialize sidebar on load
+updateSidebar()
 
 // Extract selected chapters
 extractButton.addEventListener('click', () => {
