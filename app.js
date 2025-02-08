@@ -135,6 +135,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // Remove script tags for safety
             temp.querySelectorAll('script').forEach(script => script.remove())
             
+            // Add newlines between block elements
+            const blockElements = temp.querySelectorAll('p, div, h1, h2, h3, h4, h5, h6, li, blockquote')
+            blockElements.forEach(element => {
+              console.log('inserting newlines after ', element)
+              element.insertAdjacentText('afterend', '\n\n')
+            })
+            
             text = temp.textContent || ''
             console.log('Text after textContent:', text?.substring(0, 100))
             text = text.trim()
@@ -274,7 +281,8 @@ extractButton.addEventListener('click', () => {
     })
     .filter(text => text)
     .join('\n\n')
-    .replace(/\s+/g, ' ')
+    .replace(/\n\n+/g, '\n\n')
+    // .replace(/\s+/g, ' ')
     .trim()
   
   console.log('Extracted text length:', extractedText.length)
