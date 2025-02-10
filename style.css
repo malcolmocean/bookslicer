@@ -1,0 +1,161 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: #d9f5c0;
+  min-height: 100vh;
+}
+.container {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  max-width: none;
+  width: calc(100% - 40px);
+}
+.header {
+  margin-bottom: 20px;
+}
+.main-content {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+}
+.left-column {
+  flex: 1;
+  min-width: 200px;
+}
+.right-column {
+  flex: 1;
+  min-width: 0;
+}
+h1 {
+  color: #2c3e50;
+  margin: 0;
+}
+.upload-area {
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+.upload-area.dragover {
+  border-color: #2980b9;
+  background: #ecf0f1;
+}
+.chapters-list {
+  margin-top: 20px;
+}
+.chapter-item:not(:last-child) {
+  padding: 1px;
+  border-bottom: 1px solid #eee;
+}
+.chapter-item:hover {
+  background: #f8f9fa;
+}
+.token-count {
+  margin-left: auto;
+  color: #666;
+}
+.actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  visibility: hidden;
+}
+button {
+  background: #2980b9;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+button:hover {
+  background: #3498db;
+}
+button:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+#output {
+  margin-top: 20px;
+  padding: 10px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  display: none;
+  max-height: 600px;
+  overflow-y: auto;
+}
+.loading {
+  display: none;
+  text-align: center;
+  margin: 20px 0;
+}
+.chapter-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  line-height: 1.6;
+}
+.chapter-list .sublist {
+  margin: 0.2em 0 0.2em 1.5em;
+}
+.chapter-item {
+  margin: 0;
+}
+.chapter-row {
+  display: flex;
+  align-items: center;
+}
+.collapse-button {
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.8em;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+}
+.collapse-button:hover {
+  color: #000;
+}
+.collapse-spacer {
+  width: 30px;
+}
+.chapter-row label {
+  cursor: pointer;
+  margin-left: 0.5em;
+}
+input[data-is-section="true"] + label {
+  font-weight: 600;
+}
+.toc-checkbox {
+  margin: 0;
+  cursor: pointer;
+}
+#selectAllButton {
+  background: #34495e;
+  font-size: 0.9em;
+  padding: 8px 16px;
+}
+#selectAllButton:hover {
+  background: #2c3e50;
+}
+#tokenCount {
+  margin: 10px 0;
+  padding: 5px;
+  font-weight: bold;
+  color: #333;
+}
