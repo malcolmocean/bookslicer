@@ -6,4 +6,5 @@
 - [x] include ToC showing what was/wasn't included
 - [x] make downloaded file have a very good filename
 - [ ] replace alert() with smoother things
+- [ ] convert the html to markdown
 - [ ] favicon

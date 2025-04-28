@@ -62,7 +62,7 @@ h1 {
   margin-left: auto;
   color: #666;
 }
-.actions {
+#actions {
   margin-top: 20px;
   display: flex;
   gap: 10px;

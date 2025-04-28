@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const dropZone = document.getElementById('dropZone')
   const fileInput = document.getElementById('fileInput')
   const chaptersList = document.getElementById('chaptersList')
+  const actions = document.getElementById('actions')
   const copyButton = document.getElementById('copyButton')
   const downloadButton = document.getElementById('downloadButton')
   const selectAllButton = document.getElementById('selectAllButton')
@@ -11,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const loading = document.getElementById('loading')
   
   let book = null
+  let outputText = ''
   let chapters = []
   
   // Handle drag and drop events
@@ -109,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
           try {
             // Get chapter content using the book's archive
             console.log('About to get text for href:', item.href)
-            const fullPath = `OEBPS/${item.href}`
+            const fullPath = `OEBPS/${item.href}` // they don't all use OEBPS - thot I fixed this but apparently not??
             console.log('Full path:', fullPath)
             console.log('Available files:', Object.keys(book.archive.zip.files))
             
@@ -153,14 +155,11 @@ document.addEventListener('DOMContentLoaded', () => {
               title = matchingTocItem.label
             }
             
-            const tokenEstimate = Math.ceil(text.length / 4)
-            
             if (text) { // Only add chapters that have content
               const chapter = {
                 id: item.href,
                 title: title,
                 text: text,
-                tokenEstimate: tokenEstimate
               }
               console.log('Pushing chapter:', {
                 id: chapter.id,
@@ -275,103 +274,97 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 function extractText() {
-  {
-    console.log('Extract button clicked')
-    console.log('output element in click handler:', output)
-    
-    const selectedHrefs = Array.from(chaptersList.querySelectorAll('input[type="checkbox"]:checked'))
-      .map(checkbox => checkbox.dataset.href)
-      .filter(href => href)
-    
-    console.log('Selected hrefs:', selectedHrefs)
-    
-    if (selectedHrefs.length === 0) {
-      output.textContent = '🤨 Please select at least one chapter.'
-      output.style.display = 'block'
-      return
-    }
+  console.log('Extract button clicked')
+  console.log('output element in click handler:', output)
+  outputText = ''
   
-    // Build table of contents with icons
-    function buildTocWithIcons(items, selectedHrefs, level = 0) {
-      return items.map(item => {
-        const hasSubitems = item.subitems && item.subitems.length > 0
-        const indent = '  '.repeat(level)
-        
-        let icon = '❌' // default not selected
-        
-        if (hasSubitems) {
-          const subItemHrefs = getAllHrefs(item.subitems)
-          const selectedSubItems = subItemHrefs.filter(href => selectedHrefs.includes(href))
-          
-          if (selectedSubItems.length === subItemHrefs.length) {
-            icon = '✅'
-          } else if (selectedSubItems.length > 0) {
-            icon = '🔷'
-          }
-        } else if (selectedHrefs.includes(item.href)) {
-          icon = '✅'
-        }
-        
-        let result = `${indent}- ${icon} ${item.label.trim()}\n`
-        
-        if (hasSubitems) {
-          result += buildTocWithIcons(item.subitems, selectedHrefs, level + 1)
-        }
-        
-        return result
-      }).join('')
-    }
+  const selectedHrefs = Array.from(chaptersList.querySelectorAll('input[type="checkbox"]:checked'))
+    .map(checkbox => checkbox.dataset.href)
+    .filter(href => href)
   
-    function getAllHrefs(items) {
-      let hrefs = []
-      items.forEach(item => {
-        if (item.href) hrefs.push(item.href)
-        if (item.subitems) hrefs = hrefs.concat(getAllHrefs(item.subitems))
-      })
-      return hrefs
-    }
+  console.log('Selected hrefs:', selectedHrefs)
   
-    const tocWithIcons = buildTocWithIcons(book.navigation.toc, selectedHrefs)
-    
-    const extractedText = selectedHrefs
-      .map(href => {
-        const chapter = chapters.find(ch => ch.id === href)
-        console.log('Found chapter:', chapter)
-        return chapter ? chapter.text : ''
-      })
-      .filter(text => text)
-      .join('\n\n')
-      .replace(/\n\s*\n+/g, '\n\n')
-      .replace(/\/\*\s*<!\[CDATA\[\s*\*\/([\s\S]*?)\/\*\s*\]\]>\s*\*\//g, '')
-      .replace(/<!--[\s\S]*?-->/g, '')
-      .trim()
-    
-    console.log('Extracted text length:', extractedText.length)
-    
-    // Combine TOC with extracted text
-    const finalText = `This text is excerpted from *${book.packaging.metadata.title}* by ${book.packaging.metadata.creator}
-    Here is the full Table of Contents, with checkmark icons indicating which sections
-    of the original are included:\n\n${tocWithIcons}\n\n---\n\n${extractedText}`
-    
-    output.textContent = finalText
+  if (selectedHrefs.length === 0) {
+    output.textContent = '🤨 Please select at least one chapter.'
     output.style.display = 'block'
-    copyButton.disabled = false
-    downloadButton.disabled = false
+    return
   }
+
+  // Build table of contents with icons
+  function buildTocWithIcons(items, selectedHrefs, level = 0) {
+    return items.map(item => {
+      const hasSubitems = item.subitems && item.subitems.length > 0
+      const indent = '  '.repeat(level)
+      
+      let icon = '❌' // default not selected
+      
+      if (hasSubitems) {
+        const subItemHrefs = getAllHrefs(item.subitems)
+        const selectedSubItems = subItemHrefs.filter(href => selectedHrefs.includes(href))
+        
+        if (selectedSubItems.length === subItemHrefs.length) {
+          icon = '✅'
+        } else if (selectedSubItems.length > 0) {
+          icon = '🔷'
+        }
+      } else if (selectedHrefs.includes(item.href)) {
+        icon = '✅'
+      }
+      
+      let result = `${indent}- ${icon} ${item.label.trim()}\n`
+      
+      if (hasSubitems) {
+        result += buildTocWithIcons(item.subitems, selectedHrefs, level + 1)
+      }
+      
+      return result
+    }).join('')
+  }
+
+  function getAllHrefs(items) {
+    let hrefs = []
+    items.forEach(item => {
+      if (item.href) hrefs.push(item.href)
+      if (item.subitems) hrefs = hrefs.concat(getAllHrefs(item.subitems))
+    })
+    return hrefs
+  }
+
+  const tocWithIcons = buildTocWithIcons(book.navigation.toc, selectedHrefs)
+  
+  const extractedText = selectedHrefs
+    .map(href => {
+      const chapter = chapters.find(ch => ch.id === href)
+      console.log('Found chapter:', chapter)
+      return chapter ? chapter.text : ''
+    })
+    .filter(text => text)
+    .join('\n\n')
+    .replace(/\n\s*\n+/g, '\n\n')
+    .replace(/\/\*\s*<!\[CDATA\[\s*\*\/([\s\S]*?)\/\*\s*\]\]>\s*\*\//g, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .trim()
+  
+  console.log('Extracted text length:', extractedText.length)
+  
+  // Combine TOC with extracted text
+  outputText = `This text is excerpted from *${book.packaging.metadata.title}* by ${book.packaging.metadata.creator}
+  Here is the full Table of Contents, with checkmark icons indicating which sections
+  of the original are included:\n\n${tocWithIcons}\n\n---\n\n${extractedText}`
+  
+  output.textContent = outputText
+  output.style.display = 'block'
+  copyButton.disabled = false
+  downloadButton.disabled = false
 }
 
 function updateSidebar() {
   extractText()
 
-  // Calculate total tokens from selected chapters
-  const selectedHrefs = Array.from(chaptersList.querySelectorAll('input[type="checkbox"]:checked'))
-    .map(checkbox => checkbox.dataset.href)
-    .filter(href => href)
-
-  const totalTokens = selectedHrefs.reduce((sum, href) => {
-    const chapter = chapters.find(ch => ch.id === href)
-    return sum + (chapter?.tokenEstimate || 0)
-  }, 0)
+  console.log('output.textContent', output.textContent)
+  console.log('outputText', outputText)
+  const totalTokens = Math.ceil(outputText.length / 4)
+  console.log('totalTokens', totalTokens)
 
   // Update token count display
   const tokenCount = document.getElementById('tokenCount')
@@ -384,8 +377,8 @@ function updateSidebar() {
 
   // Show actions if any chapters are selected
   const selectedChapters = document.querySelectorAll('.toc-checkbox:checked')
-  const actions = document.querySelector('.actions')
   actions.style.visibility = selectedChapters.length > 0 ? 'visible' : 'hidden'
+  console.log('actions.style.visibility', actions.style.visibility)
 }
 
 // Copy to clipboard
@@ -403,7 +396,8 @@ downloadButton.addEventListener('click', () => {
   a.href = url
   let filename = book.packaging.metadata.title
   filename += ' EXCERPTS' // would be cool to do something even smarter like (ch1-5,8,10) but this is hard given that not all epubs number chapters etc
-  a.download = filename+'.txt'
+  // examples: never-pay-the-first-bill-sections1&3
+  a.download = filename+'.txt' // ultimately do markdown
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
