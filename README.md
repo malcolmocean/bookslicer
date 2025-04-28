@@ -1,5 +1,7 @@
 # BookSlicer
 
+### [Live demo here!](https://malcolmocean.github.io/bookslicer/)
+
 A browser-based tool for extracting chapters from EPUB books and preparing them for use as LLM context. Works entirely in the browser - no server required!
 
 ## Features
