@@ -5,7 +5,10 @@
 - [x] add select-all button
 - [x] include ToC showing what was/wasn't included
 - [x] make downloaded file have a very good filename
+- [ ] markdown
 - [ ] make a better warning if it fails to extract the text
 - [ ] replace alert() with smoother things
-- [ ] convert the html to markdown
+- [ ] options to do things other than markdown (currently ugly and doesn't auto-switch)
 - [ ] favicon
+- [ ] fix weird bug where the labels are referring to the wrong checkboxes
+- [ ] make right stuff show/hide way saner - it's currently all sub-items

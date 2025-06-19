@@ -6,6 +6,7 @@
   <title>BookSlicer - ePub Chapter Extractor</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+  <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
   <link rel="stylesheet" href="style.css" type="text/css" />
 </head>
 <body>
@@ -29,6 +30,13 @@
       </div>
       
       <div class="right-column">
+        <!-- hidden for now because changing this doesn't auto-change the output and I don't wanna deal with that rn in order to commit. markdown default is fine.
+        <div class="format-options">
+          <label><input type="radio" name="format" value="markdown" checked> Markdown</label>
+          <label><input type="radio" name="format" value="html"> HTML</label>
+          <label><input type="radio" name="format" value="text"> Text</label>
+        </div>
+        -->
         <div id="tokenCount"></div>
         <div id="actions">
           <button id="copyButton" disabled>
@@ -36,7 +44,7 @@
           </button>
           <br>
           <button id="downloadButton" disabled>
-            ⬇️ Download Text
+            ⬇️ Download Markdown
           </button>
         </div>
         <pre id="output"></pre>

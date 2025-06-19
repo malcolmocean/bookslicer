@@ -14,6 +14,26 @@ document.addEventListener('DOMContentLoaded', () => {
   let book = null
   let outputText = ''
   let chapters = []
+  let currentFormat = 'markdown'
+  
+  // Initialize Turndown for HTML to Markdown conversion
+  const turndownService = new TurndownService({
+    headingStyle: 'atx',
+    codeBlockStyle: 'fenced'
+  })
+  
+  // Add event listeners for format radio buttons
+  document.querySelectorAll('input[name="format"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      currentFormat = e.target.value
+      // Update download button text
+      const formatText = currentFormat.charAt(0).toUpperCase() + currentFormat.slice(1)
+      downloadButton.innerHTML = `⬇️ Download ${formatText}`
+      if (outputText) {
+        updateSidebar()
+      }
+    })
+  })
   
   // Handle drag and drop events
   ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -280,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Remove script tags for safety
     temp.querySelectorAll('script').forEach(script => script.remove())
     
-    let text = ''
+    let result = ''
     
     // If this is a subsection (has fragment), extract just that section
     if (href.includes('#')) {
@@ -291,16 +311,13 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (targetElement) {
         // Get content from this element to the next section or end
-        let sectionText = ''
+        let sectionContent = ''
         let currentElement = targetElement
         
         while (currentElement) {
-          // Add newlines between block elements
-          if (['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote'].includes(currentElement.tagName.toLowerCase())) {
-            sectionText += currentElement.textContent + '\n\n'
-          } else {
-            sectionText += currentElement.textContent
-          }
+          // Clone the element to avoid modifying the original
+          const clonedElement = currentElement.cloneNode(true)
+          sectionContent += clonedElement.outerHTML
           
           // Move to next sibling, but stop if we hit another section
           currentElement = currentElement.nextElementSibling
@@ -309,22 +326,34 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         
-        text = sectionText.trim()
+        result = sectionContent
       } else {
         console.warn(`Fragment ${fragment} not found in ${href}`)
-        text = temp.textContent || ''
+        result = temp.innerHTML
       }
     } else {
-      // Full chapter - add newlines between block elements
-      const blockElements = temp.querySelectorAll('p, div, h1, h2, h3, h4, h5, h6, li, blockquote')
-      blockElements.forEach(element => {
-        element.insertAdjacentText('afterend', '\n\n')
-      })
-      
-      text = temp.textContent || ''
+      // Full chapter
+      result = temp.innerHTML
     }
     
-    return text.trim()
+    // Convert based on current format
+    switch (currentFormat) {
+      case 'html':
+        return result.trim()
+      case 'markdown':
+        return turndownService.turndown(result).trim()
+      case 'text':
+        // Convert to plain text
+        const textTemp = document.createElement('div')
+        textTemp.innerHTML = result
+        const blockElements = textTemp.querySelectorAll('p, div, h1, h2, h3, h4, h5, h6, li, blockquote')
+        blockElements.forEach(element => {
+          element.insertAdjacentText('afterend', '\n\n')
+        })
+        return textTemp.textContent.trim()
+      default:
+        return result.trim()
+    }
   }
   
   function displayChapters() {
@@ -532,14 +561,32 @@ copyButton.addEventListener('click', () => {
 
 // Download text file
 downloadButton.addEventListener('click', () => {
-  const blob = new Blob([output.textContent], { type: 'text/plain' })
+  // Determine file extension and MIME type based on format
+  let fileExtension, mimeType
+  switch (currentFormat) {
+    case 'markdown':
+      fileExtension = '.md'
+      mimeType = 'text/markdown'
+      break
+    case 'html':
+      fileExtension = '.html'
+      mimeType = 'text/html'
+      break
+    case 'text':
+    default:
+      fileExtension = '.txt'
+      mimeType = 'text/plain'
+      break
+  }
+  
+  const blob = new Blob([output.textContent], { type: mimeType })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
   let filename = book.packaging.metadata.title
   filename += ' EXCERPTS' // would be cool to do something even smarter like (ch1-5,8,10) but this is hard given that not all epubs number chapters etc
   // examples: never-pay-the-first-bill-sections1&3
-  a.download = filename+'.txt' // ultimately do markdown
+  a.download = filename + fileExtension
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
