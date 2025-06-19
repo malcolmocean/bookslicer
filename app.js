@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loading.style.display = 'none'
       }
     } else {
-      alert('Please select an EPUB file.')
+      chaptersList.innerHTML = '<p style="color: blue;">Please select an EPUB file.</p>'
     }
   }
   
@@ -555,7 +555,23 @@ function updateSidebar() {
 // Copy to clipboard
 copyButton.addEventListener('click', () => {
   navigator.clipboard.writeText(output.textContent)
-  .then(() => alert('Text copied to clipboard!'))
+  .then(() => {
+    // Store original button content and style
+    const originalHTML = copyButton.innerHTML
+    const originalBackgroundColor = copyButton.style.backgroundColor
+    
+    // Change to success state
+    copyButton.innerHTML = '✅ Copied!'
+    copyButton.style.backgroundColor = '#4CAF50'
+    copyButton.style.color = 'white'
+    
+    // Revert after 3 seconds
+    setTimeout(() => {
+      copyButton.innerHTML = originalHTML
+      copyButton.style.backgroundColor = originalBackgroundColor
+      copyButton.style.color = ''
+    }, 3000)
+  })
   .catch(err => console.error('Failed to copy text:', err))
 })
 
