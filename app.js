@@ -136,9 +136,17 @@ document.addEventListener('DOMContentLoaded', () => {
               continue
             }
             
+            // they don't all use OEBPS
+            let mainFolderName = '' // just in root dir
+            if (/OEBPS\//.test(Object.keys(book.archive.zip.files).toString())) {
+              mainFolderName = 'OEBPS/'
+            } else if (/OPS\//.test(Object.keys(book.archive.zip.files).toString())) {
+              mainFolderName = 'OPS/'
+            }
+
             // Get chapter content using the book's archive
             console.log('About to get text for href:', spineItem.href)
-            const fullPath = `OEBPS/${spineItem.href}` // they don't all use OEBPS - thot I fixed this but apparently not??
+            const fullPath = `${mainFolderName}${spineItem.href}`
             console.log('Full path:', fullPath)
             console.log('Available files:', Object.keys(book.archive.zip.files))
             

@@ -5,6 +5,7 @@
 - [x] add select-all button
 - [x] include ToC showing what was/wasn't included
 - [x] make downloaded file have a very good filename
+- [ ] make a better warning if it fails to extract the text
 - [ ] replace alert() with smoother things
 - [ ] convert the html to markdown
 - [ ] favicon
