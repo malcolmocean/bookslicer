@@ -375,12 +375,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   function displayChapters() {
-    function buildTocHtml(items, level = 0) {
+    function buildTocHtml(items, level = 0, path = '') {
       return `
                 <ul class="chapter-list ${level > 0 ? 'sublist' : ''}">
                     ${items.map((item, index) => {
       const hasSubitems = item.subitems && item.subitems.length > 0
-      const id = `toc-${level}-${index}`
+      const currentPath = path ? `${path}-${index}` : `${index}`
+      const id = `toc-${currentPath}`
       
       return `
                             <li class="chapter-item">
@@ -396,13 +397,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                            ${hasSubitems ? 'data-is-section="true"' : ''}>
                                     <label for="${id}">${item.label}</label>
                                 </div>
-                                ${hasSubitems ? buildTocHtml(item.subitems, level + 1) : ''}
+                                ${hasSubitems ? buildTocHtml(item.subitems, level + 1, currentPath) : ''}
                             </li>
                         `
     }).join('')}
                 </ul>
             `
-  }
+    }
   
   // Create a map of href to chapter content
   const chapterMap = new Map(
