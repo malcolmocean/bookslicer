@@ -433,7 +433,10 @@ function extractText() {
         const subItemHrefs = getAllHrefs(item.subitems)
         const selectedSubItems = subItemHrefs.filter(href => selectedHrefs.includes(href))
         
-        if (selectedSubItems.length === subItemHrefs.length) {
+        // Check if the parent item itself is selected (if it has an href)
+        const parentSelected = item.href && selectedHrefs.includes(item.href)
+        
+        if (parentSelected) {
           icon = '✅'
         } else if (selectedSubItems.length > 0) {
           icon = '🔷'
