@@ -22,6 +22,24 @@ document.addEventListener('DOMContentLoaded', () => {
     codeBlockStyle: 'fenced'
   })
   
+  // Add rule to remove style tags
+  turndownService.addRule('removeStyles', {
+    filter: 'style',
+    replacement: () => ''
+  })
+  
+  // Add rule to remove script tags
+  turndownService.addRule('removeScripts', {
+    filter: 'script',
+    replacement: () => ''
+  })
+  
+  // Add rule to remove meta, link, and other non-content elements
+  turndownService.addRule('removeMetaElements', {
+    filter: ['meta', 'link', 'base', 'title'],
+    replacement: () => ''
+  })
+  
   // Add event listeners for format radio buttons
   document.querySelectorAll('input[name="format"]').forEach(radio => {
     radio.addEventListener('change', (e) => {
