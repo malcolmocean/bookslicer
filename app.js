@@ -95,23 +95,50 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         flattenToc(navigation.toc)
         
+        // Debug: Log all TOC and spine items to understand the structure
+        console.log('All TOC items:', tocArray.map(t => ({ href: t.href, label: t.label })))
+        console.log('All spine items:', book.spine.spineItems.map(s => ({ href: s.href, id: s.id })))
+        
         chapters = []
         
-        // Get all spine items
-        const spineItems = book.spine.spineItems
-        
-        for (let i = 0; i < spineItems.length; i++) {
-          const item = spineItems[i]
-          console.log('Processing spine item:', {
-            href: item.href,
-            id: item.id,
+        // Create chapters for all TOC items (both full chapters and subsections)
+        for (let i = 0; i < tocArray.length; i++) {
+          const tocItem = tocArray[i]
+          console.log('Processing TOC item:', {
+            href: tocItem.href,
+            label: tocItem.label,
             index: i
           })
           
           try {
+            // Extract the base file path (without fragment)
+            const baseHref = tocItem.href.split('#')[0]
+            
+            // More robust spine item matching
+            const spineItem = findMatchingSpineItem(baseHref, book.spine.spineItems)
+            
+            if (!spineItem) {
+              console.warn(`No spine item found for TOC item: ${tocItem.href}`)
+              // Try to load the file directly using the TOC href
+              const directContent = await tryLoadFileDirectly(tocItem.href, book.archive)
+              if (directContent) {
+                console.log('Successfully loaded file directly for:', tocItem.href)
+                const text = extractTextFromContent(directContent, tocItem.href)
+                if (text) {
+                  const chapter = {
+                    id: tocItem.href,
+                    title: tocItem.label,
+                    text: text,
+                  }
+                  chapters.push(chapter)
+                }
+              }
+              continue
+            }
+            
             // Get chapter content using the book's archive
-            console.log('About to get text for href:', item.href)
-            const fullPath = `OEBPS/${item.href}` // they don't all use OEBPS - thot I fixed this but apparently not??
+            console.log('About to get text for href:', spineItem.href)
+            const fullPath = `OEBPS/${spineItem.href}` // they don't all use OEBPS - thot I fixed this but apparently not??
             console.log('Full path:', fullPath)
             console.log('Available files:', Object.keys(book.archive.zip.files))
             
@@ -126,39 +153,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 .catch(reject)
             })
             console.log('Raw content from archive:', content?.substring(0, 100))
-            let text = ''
             
-            // Create a temporary div to parse HTML content
-            const temp = document.createElement('div')
-            temp.innerHTML = content
-            console.log('Temp div content:', temp.innerHTML?.substring(0, 100))
+            const text = extractTextFromContent(content, tocItem.href)
             
-            // Remove script tags for safety
-            temp.querySelectorAll('script').forEach(script => script.remove())
-            
-            // Add newlines between block elements
-            const blockElements = temp.querySelectorAll('p, div, h1, h2, h3, h4, h5, h6, li, blockquote')
-            blockElements.forEach(element => {
-              console.log('inserting newlines after ', element)
-              element.insertAdjacentText('afterend', '\n\n')
-            })
-            
-            text = temp.textContent || ''
-            console.log('Text after textContent:', text?.substring(0, 100))
-            text = text.trim()
+            console.log('Text after processing:', text?.substring(0, 100))
             console.log('Text after trim:', text?.substring(0, 100))
-            
-            // Try to get title from toc
-            let title = `Chapter ${i + 1}`
-            const matchingTocItem = tocArray.find(t => t.href.includes(item.href))
-            if (matchingTocItem) {
-              title = matchingTocItem.label
-            }
             
             if (text) { // Only add chapters that have content
               const chapter = {
-                id: item.href,
-                title: title,
+                id: tocItem.href,
+                title: tocItem.label,
                 text: text,
               }
               console.log('Pushing chapter:', {
@@ -186,6 +190,133 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       alert('Please select an EPUB file.')
     }
+  }
+  
+  // Helper function to find matching spine item with various strategies
+  function findMatchingSpineItem(tocHref, spineItems) {
+    // Strategy 1: Direct match
+    let match = spineItems.find(spine => spine.href === tocHref)
+    if (match) return match
+    
+    // Strategy 2: Match without fragments
+    match = spineItems.find(spine => {
+      const spineHref = spine.href.split('#')[0]
+      const tocHrefClean = tocHref.split('#')[0]
+      return spineHref === tocHrefClean
+    })
+    if (match) return match
+    
+    // Strategy 3: Match by filename (ignoring directory differences)
+    const tocFilename = tocHref.split('/').pop().split('#')[0]
+    match = spineItems.find(spine => {
+      const spineFilename = spine.href.split('/').pop().split('#')[0]
+      return spineFilename === tocFilename
+    })
+    if (match) return match
+    
+    // Strategy 4: Match by filename with different extensions
+    const tocFilenameNoExt = tocFilename.split('.')[0]
+    match = spineItems.find(spine => {
+      const spineFilename = spine.href.split('/').pop().split('#')[0]
+      const spineFilenameNoExt = spineFilename.split('.')[0]
+      return spineFilenameNoExt === tocFilenameNoExt
+    })
+    if (match) return match
+    
+    // Strategy 5: Case-insensitive filename match
+    match = spineItems.find(spine => {
+      const spineFilename = spine.href.split('/').pop().split('#')[0].toLowerCase()
+      return spineFilename === tocFilename.toLowerCase()
+    })
+    if (match) return match
+    
+    return null
+  }
+  
+  // Helper function to try loading a file directly from the archive
+  async function tryLoadFileDirectly(href, archive) {
+    const possiblePaths = [
+      href,
+      `OEBPS/${href}`,
+      `EPUB/${href}`,
+      href.replace('.xhtml', '.html'),
+      href.replace('.html', '.xhtml'),
+      `OEBPS/${href.replace('.xhtml', '.html')}`,
+      `OEBPS/${href.replace('.html', '.xhtml')}`,
+      `EPUB/${href.replace('.xhtml', '.html')}`,
+      `EPUB/${href.replace('.html', '.xhtml')}`
+    ]
+    
+    for (const path of possiblePaths) {
+      const zipFile = archive.zip.files[path]
+      if (zipFile) {
+        try {
+          const content = await zipFile.async('string')
+          console.log(`Successfully loaded file from path: ${path}`)
+          return content
+        } catch (err) {
+          console.warn(`Failed to load file from path: ${path}`, err)
+        }
+      }
+    }
+    
+    return null
+  }
+  
+  // Helper function to extract text from content
+  function extractTextFromContent(content, href) {
+    // Create a temporary div to parse HTML content
+    const temp = document.createElement('div')
+    temp.innerHTML = content
+    
+    // Remove script tags for safety
+    temp.querySelectorAll('script').forEach(script => script.remove())
+    
+    let text = ''
+    
+    // If this is a subsection (has fragment), extract just that section
+    if (href.includes('#')) {
+      const fragment = href.split('#')[1]
+      const targetElement = temp.querySelector(`[id="${fragment}"]`) || 
+                           temp.querySelector(`[name="${fragment}"]`) ||
+                           temp.querySelector(`a[name="${fragment}"]`)
+      
+      if (targetElement) {
+        // Get content from this element to the next section or end
+        let sectionText = ''
+        let currentElement = targetElement
+        
+        while (currentElement) {
+          // Add newlines between block elements
+          if (['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote'].includes(currentElement.tagName.toLowerCase())) {
+            sectionText += currentElement.textContent + '\n\n'
+          } else {
+            sectionText += currentElement.textContent
+          }
+          
+          // Move to next sibling, but stop if we hit another section
+          currentElement = currentElement.nextElementSibling
+          if (currentElement && ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(currentElement.tagName.toLowerCase())) {
+            break
+          }
+        }
+        
+        text = sectionText.trim()
+      } else {
+        console.warn(`Fragment ${fragment} not found in ${href}`)
+        text = temp.textContent || ''
+      }
+    } else {
+      // Full chapter - add newlines between block elements
+      const blockElements = temp.querySelectorAll('p, div, h1, h2, h3, h4, h5, h6, li, blockquote')
+      blockElements.forEach(element => {
+        element.insertAdjacentText('afterend', '\n\n')
+      })
+      
+      text = temp.textContent || ''
+    }
+    
+    return text.trim()
   }
   
   function displayChapters() {
