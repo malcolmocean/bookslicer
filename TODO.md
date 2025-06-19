@@ -1,4 +1,4 @@
-# TODO (once I get it working in general at all)
+# TODO
 
 - [x] line-breaks etc in output
 - [x] restructure page to be more convenient scrolling-wise
@@ -8,8 +8,8 @@
 - [x] markdown
 - [x] fix weird bug where the labels are referring to the wrong checkboxes
 - [x] replace alert() with smoother things
+- [x] favicon
 - [ ] make a better warning if it fails to extract the text
-- [ ] favicon
 - [ ] make right stuff show/hide way saner - it's currently all sub-items
 
 
